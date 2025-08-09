@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EduTrack - Seguimiento Académico</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .user-selector {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .user-btn {
+            background: rgba(255,255,255,0.2);
+            border: 2px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 15px 30px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 1.1em;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .user-btn:hover, .user-btn.active {
+            background: rgba(255,255,255,0.3);
+            border-color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: rgba(255,255,255,0.95);
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.4em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .progress-circle {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            position: relative;
+            background: conic-gradient(#667eea 0deg, #667eea var(--progress), #e0e0e0 var(--progress), #e0e0e0 360deg);
+        }
+
+        .progress-circle::before {
+            content: '';
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: white;
+            position: absolute;
+        }
+
+        .progress-text {
+            position: relative;
+            z-index: 1;
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .exam-item {
+            background: #f8f9ff;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            border-left: 4px solid #667eea;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .exam-urgent {
+            border-left-color: #ff6b6b;
+            background: #fff5f5;
+        }
+
+        .exam-date {
+            background: #667eea;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.9em;
+        }
+
+        .exam-urgent .exam-date {
+            background: #ff6b6b;
+        }
+
+        .form-section {
+            background: rgba(255,255,255,0.95);
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1em;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: transform 0.3s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px;
+        }
+
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .comparison-chart {
+            height: 300px;
+            margin: 20px 0;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 10px;
+            margin: 10px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .alert-warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎓 EduTrack</h1>
+            <p>Conectando padres y estudiantes hacia la graduación exitosa</p>
+        </div>
+
+        <div class="user-selector">
+            <button class="user-btn active" onclick="switchUser('student')">👨‍🎓 Estudiante</button>
+            <button class="user-btn" onclick="switchUser('parent')">👨‍👩‍👦 Padre/Madre</button>
+        </div>
+
+        <!-- Vista Estudiante -->
+        <div id="student-view">
+            <div class="dashboard">
+                <div class="card">
+                    <h3>📊 Progreso de Carrera</h3>
+                    <div class="progress-circle" style="--progress: 216deg;">
+                        <span class="progress-text" id="student-progress">60%</span>
+                    </div>
+                    <div class="stats">
+                        <div class="stat-item">
+                            <div class="stat-number" id="completed-subjects">36</div>
+                            <div>Materias Completadas</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number" id="remaining-subjects">24</div>
+                            <div>Materias Restantes</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>📅 Próximos Exámenes</h3>
+                    <div id="student-exams">
+                        <div class="exam-item exam-urgent">
+                            <div>
+                                <strong>Análisis Matemático II</strong><br>
+                                <small>Examen Final</small>
+                            </div>
+                            <div class="exam-date">15 Ago</div>
+                        </div>
+                        <div class="exam-item">
+                            <div>
+                                <strong>Programación III</strong><br>
+                                <small>Parcial</small>
+                            </div>
+                            <div class="exam-date">22 Ago</div>
+                        </div>
+                        <div class="exam-item">
+                            <div>
+                                <strong>Base de Datos</strong><br>
+                                <small>Examen Final</small>
+                            </div>
+                            <div class="exam-date">28 Ago</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>🎯 Proyección de Graduación</h3>
+                    <div class="alert alert-success">
+                        <span>✅</span>
+                        <div>
+                            <strong>Fecha Estimada:</strong> Diciembre 2025<br>
+                            <small>Basado en tu rendimiento actual</small>
+                        </div>
+                    </div>
+                    <div class="comparison-chart">
+                        <canvas id="progressChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h3>➕ Agregar Turno de Examen</h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 15px; align-items: end;">
+                    <div class="form-group">
+                        <label>Materia</label>
+                        <select id="exam-subject">
+                            <option>Análisis Matemático III</option>
+                            <option>Sistemas Operativos</option>
+                            <option>Redes de Computadoras</option>
+                            <option>Ingeniería de Software</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Fecha</label>
+                        <input type="date" id="exam-date">
+                    </div>
+                    <div class="form-group">
+                        <label>Tipo</label>
+                        <select id="exam-type">
+                            <option>Parcial</option>
+                            <option>Final</option>
+                            <option>Recuperatorio</option>
+                        </select>
+                    </div>
+                    <button class="btn" onclick="addExam()">Agregar</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Vista Padre -->
+        <div id="parent-view" class="hidden">
+            <div class="dashboard">
+                <div class="card">
+                    <h3>👨‍🎓 Progreso de María</h3>
+                    <div class="progress-circle" style="--progress: 216deg;">
+                        <span class="progress-text">60%</span>
+                    </div>
+                    <div class="alert alert-warning">
+                        <span>⚠️</span>
+                        <div>
+                            <strong>Atención:</strong> Examen urgente en 6 días<br>
+                            <small>Análisis Matemático II - 15 de Agosto</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>📈 Rendimiento Académico</h3>
+                    <div class="stats">
+                        <div class="stat-item">
+                            <div class="stat-number">7.5</div>
+                            <div>Promedio General</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number">85%</div>
+                            <div>Tasa de Aprobación</div>
+                        </div>
+                    </div>
+                    <div class="alert alert-success">
+                        <span>📊</span>
+                        <div>
+                            <strong>Por encima del promedio:</strong><br>
+                            <small>Tu hija está 15% por encima del promedio de la carrera</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>⏰ Próximas Fechas Importantes</h3>
+                    <div class="exam-item exam-urgent">
+                        <div>
+                            <strong>Análisis Matemático II</strong><br>
+                            <small>Examen Final - Crítico para avanzar</small>
+                        </div>
+                        <div class="exam-date">6 días</div>
+                    </div>
+                    <div class="exam-item">
+                        <div>
+                            <strong>Fin de Inscripciones</strong><br>
+                            <small>Próximo cuatrimestre</small>
+                        </div>
+                        <div class="exam-date">30 Ago</div>
+                    </div>
+                    <div class="exam-item">
+                        <div>
+                            <strong>Inicio de Clases</strong><br>
+                            <small>Segundo cuatrimestre</small>
+                        </div>
+                        <div class="exam-date">15 Sep</div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>🎯 Proyección de Graduación</h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div class="stat-item">
+                            <div class="stat-number">Dic 2025</div>
+                            <div>Fecha Estimada</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number">Nov 2026</div>
+                            <div>Promedio Carrera</div>
+                        </div>
+                    </div>
+                    <div class="alert alert-success">
+                        <span>🚀</span>
+                        <div>
+                            <strong>¡Excelente progreso!</strong><br>
+                            <small>Se graduará 11 meses antes que el promedio</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentUser = 'student';
+        let studentData = {
+            progress: 60,
+            completedSubjects: 36,
+            totalSubjects: 60,
+            upcomingExams: []
+        };
+
+        function switchUser(userType) {
+            currentUser = userType;
+            document.querySelectorAll('.user-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            if (userType === 'student') {
+                document.getElementById('student-view').classList.remove('hidden');
+                document.getElementById('parent-view').classList.add('hidden');
+            } else {
+                document.getElementById('student-view').classList.add('hidden');
+                document.getElementById('parent-view').classList.remove('hidden');
+            }
+        }
+
+        function addExam() {
+            const subject = document.getElementById('exam-subject').value;
+            const date = document.getElementById('exam-date').value;
+            const type = document.getElementById('exam-type').value;
+            
+            if (!date) {
+                alert('Por favor selecciona una fecha');
+                return;
+            }
+            
+            const examDate = new Date(date);
+            const today = new Date();
+            const daysDiff = Math.ceil((examDate - today) / (1000 * 60 * 60 * 24));
+            
+            const examItem = document.createElement('div');
+            examItem.className = daysDiff <= 7 ? 'exam-item exam-urgent' : 'exam-item';
+            
+            const dateStr = examDate.toLocaleDateString('es-ES', { day: '2-digit', month: 'short' });
+            
+            examItem.innerHTML = `
+                <div>
+                    <strong>${subject}</strong><br>
+                    <small>${type}</small>
+                </div>
+                <div class="exam-date">${dateStr}</div>
+            `;
+            
+            document.getElementById('student-exams').appendChild(examItem);
+            
+            // Limpiar formulario
+            document.getElementById('exam-date').value = '';
+            
+            // Mostrar notificación
+            const alert = document.createElement('div');
+            alert.className = 'alert alert-success';
+            alert.innerHTML = '<span>✅</span><div>Examen agregado correctamente</div>';
+            alert.style.position = 'fixed';
+            alert.style.top = '20px';
+            alert.style.right = '20px';
+            alert.style.zIndex = '1000';
+            document.body.appendChild(alert);
+            
+            setTimeout(() => {
+                alert.remove();
+            }, 3000);
+        }
+
+        function updateProgress() {
+            const progressElement = document.getElementById('student-progress');
+            const completedElement = document.getElementById('completed-subjects');
+            const remainingElement = document.getElementById('remaining-subjects');
+            
+            const remaining = studentData.totalSubjects - studentData.completedSubjects;
+            const progressDegrees = (studentData.progress / 100) * 360;
+            
+            progressElement.textContent = `${studentData.progress}%`;
+            completedElement.textContent = studentData.completedSubjects;
+            remainingElement.textContent = remaining;
+            
+            document.querySelector('.progress-circle').style.setProperty('--progress', `${progressDegrees}deg`);
+        }
+
+        function initChart() {
+            const ctx = document.getElementById('progressChart').getContext('2d');
+            
+            new
